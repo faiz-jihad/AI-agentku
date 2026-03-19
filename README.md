@@ -1,4 +1,4 @@
-﻿# **AI-agentku**
+﻿# **AI-Agentku As Student**
 ## *JARVIS + ResearchGPT — Asisten AI Cerdas dengan Kemampuan Riset Akademik Mendalam*
 
 ---
