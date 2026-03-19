@@ -1,0 +1,31 @@
+# ============================
+# AI-agentku / ResearchGPT
+# Dependencies
+# ============================
+
+# Core AI
+google-genai>=1.0.0
+google-generativeai>=0.8.0
+
+# Environment
+python-dotenv>=1.0.0
+
+# Text-to-Speech
+pyttsx3>=2.90
+gTTS>=2.3.0
+pygame>=2.5.0
+
+# Speech Recognition
+SpeechRecognition>=3.10.0
+
+# Web & APIs
+requests>=2.30.0
+wolframalpha>=5.0.0
+Wikipedia-API>=0.6.0
+
+# Windows / System
+pywin32>=306
+keyboard>=0.13.5
+
+# Optional (web scraping untuk riset lanjut)
+beautifulsoup4>=4.12.0
