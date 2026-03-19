@@ -30,6 +30,22 @@ import pythoncom
 import keyboard
 import glob
 
+# ==================== LOAD .ENV ====================
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv opsional, fallback ke env vars OS
+
+# ==================== RESEARCHGPT ====================
+try:
+    from research_gpt import ResearchGPT as _ResearchGPT
+    RESEARCH_GPT_AVAILABLE = True
+    print("✓ ResearchGPT modul siap")
+except ImportError:
+    RESEARCH_GPT_AVAILABLE = False
+    print("⚠️  ResearchGPT tidak ditemukan (research_gpt.py tidak ada)")
+
 # ==================== KONFIGURASI ====================
 class Config:
     MAX_HISTORY = 50
@@ -38,8 +54,13 @@ class Config:
     LISTEN_TIMEOUT = 5
 
 # ==================== API KEYS ====================
-GEMINI_API_KEY = "AIzaSyBTleQ1UB2X7BOLC6nSbKXoIosrGR9yL1Y"
-WOLFRAM_ALPHA_ID = 'V388XY-YEUE7YTQKW'
+GEMINI_API_KEY   = os.getenv("GEMINI_API_KEY", "")
+WOLFRAM_ALPHA_ID = os.getenv("WOLFRAM_ALPHA_ID", "")
+
+if not GEMINI_API_KEY:
+    print("⚠️  GEMINI_API_KEY tidak ditemukan! Isi file .env terlebih dahulu.")
+if not WOLFRAM_ALPHA_ID:
+    print("⚠️  WOLFRAM_ALPHA_ID tidak ditemukan (opsional).")
 
 # ==================== INISIALISASI GEMINI CLIENT ====================
 try:
@@ -716,6 +737,48 @@ def process_commands(query: str, voice: VoiceHandler,
         voice.speak('Sampai jumpa!')
         return 'exit'
     
+    # ===== RESEARCHGPT =====
+    research_triggers = [
+        'riset ', 'research ', 'buat jurnal', 'buat paper',
+        'buat artikel ilmiah', 'bikin jurnal', 'bikin paper',
+        'tulis jurnal', 'tulis paper'
+    ]
+    if RESEARCH_GPT_AVAILABLE and any(trigger in query for trigger in research_triggers):
+        # Ekstrak topik dari query
+        topic = query
+        for trigger in research_triggers:
+            topic = topic.replace(trigger, '')
+        topic = topic.strip()
+        
+        if not topic:
+            voice.speak("Mau riset tentang apa? Sebutkan topiknya.")
+            return True
+        
+        voice.speak(f"Baik, saya mulai riset mendalam tentang {topic}. "
+                    f"Proses ini memakan waktu beberapa menit. Silakan tunggu.")
+        print(f"\n🎓 Memulai ResearchGPT untuk topik: '{topic}'")
+        print("📁 Hasil akan disimpan di folder 'hasil_riset/'")
+        
+        def run_research_thread():
+            try:
+                agent = _ResearchGPT(verbose=True)
+                paper, filepath = agent.run_full_workflow(topic)
+                if filepath:
+                    import os
+                    abs_path = os.path.abspath(filepath)
+                    print(f"\n\u2705 Paper selesai! Tersimpan di: {abs_path}")
+                    voice.speak(f"Paper ilmiah tentang {topic} sudah selesai dan disimpan. "
+                                f"Silakan cek folder hasil riset.")
+                else:
+                    voice.speak("Maaf, terjadi error saat membuat paper. Coba lagi.")
+            except Exception as e:
+                print(f"❌ Error ResearchGPT: {e}")
+                voice.speak("Maaf, error saat riset.")
+        
+        research_thread = threading.Thread(target=run_research_thread, daemon=True)
+        research_thread.start()
+        return True
+    
     return False
 
 # ==================== MAIN PROGRAM ====================
@@ -739,6 +802,11 @@ def main():
     print("  • 'buka youtube'     • 'buka google'    • 'buka gmail'")
     print("\n📚 LAINNYA:")
     print("  • 'apa itu [topik]'  • 'jam berapa'     • 'hitung [rumus]'")
+    print("\n🎓 RESEARCHGPT — DEEP ACADEMIC RESEARCH:")
+    print("  • 'riset [topik]'              — Riset akademik mendalam")
+    print("  • 'buat jurnal [topik]'         — Buat paper jurnal ilmiah")
+    print("  • 'buat paper [topik]'          — Buat paper siap revisi")
+    print("  💡 Atau jalankan: python run_research.py")
     print("="*90 + "\n")
     
     voice.set_voice_gender("male")
